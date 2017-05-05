@@ -13,13 +13,15 @@
 # you should consider adding -j<nb threads>
 # in your /etc/makepkg.conf to allow parallel build
 
+# TODO extern VTK
+
 pkgbase=paraview
 pkgname=('paraview' 'vtk' 'ttk')
 _paraview_ver=5.3.0
 _ttk_ver=0.9.1
 pkgver=${_paraview_ver}
 pkgrel=1
-pkgdesc='Parallel Visualization Application with VTK and TTK'
+pkgdesc='Parallel Visualization Application using the Topology ToolKit (TTK)'
 arch=('i686' 'x86_64')
 
 depends=('qt5-tools' 'qt5-x11extras'  'qt5-xmlpatterns'
@@ -28,6 +30,8 @@ depends=('qt5-tools' 'qt5-x11extras'  'qt5-xmlpatterns'
          )
 makedepends=('cmake' 'mesa' 'gcc-fortran' 'git')
 provides=('paraview' 'vtk' 'ttk')
+
+install=ttk.install
 
 source=("paraview::http://paraview.org/files/v${_paraview_ver:0:3}/ParaView-v${_paraview_ver}.tar.gz"
         "ttk::https://topology-tool-kit.github.io/stuff/ttk-${_ttk_ver}.tar.gz"
@@ -141,14 +145,8 @@ package_ttk() {
     url='https://topology-tool-kit.github.io/'
     license=('bsd')
 
-    install=ttk.install
-
-    pwd
-
     mkdir -p "${srcdir}/build-ttk"
     cd "${srcdir}/build-ttk"
-    # avoid bug when rebuilding over existing build
-    rm -rf -- standalone/ paraview/ CMakeLists.txt
 
     # plugins
     ttk_suffix="/usr/lib/ttk"
