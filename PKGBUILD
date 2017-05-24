@@ -66,6 +66,9 @@ package() {
         VTK_USE_SYSTEM_LIB+="-DVTK_USE_SYSTEM_${lib}:BOOL=ON "
     done
 
+    msg "Build paraview..."
+    msg2 "Configuration"
+
     cmake \
         -DBUILD_DOCUMENTATION:BOOL=OFF \
         -DBUILD_EXAMPLES:BOOL=ON \
@@ -90,12 +93,16 @@ package() {
         ${VTK_USE_SYSTEM_LIB} \
         ../ParaView-v${_paraview_ver}
 
+    msg2 "Compilation"
+
     make DESTDIR="${pkgdir}" install
+
+    msg2 "Finishing..."
 
     # Install license
     install -Dm644 "${srcdir}/ParaView-v${_paraview_ver}/License_v1.2.txt" "${pkgdir}/usr/share/licenses/paraview/LICENSE"
 
     # Remove IceT man pages to avoid conflicts
-    # rm -- "${pkgdir}/usr/share/man/man3/icet"*.3
+    rm -- "${pkgdir}/usr/share/man/man3/icet"*.3
 }
 
