@@ -103,6 +103,8 @@ package() {
     install -Dm644 "${srcdir}/ParaView-v${_paraview_ver}/License_v1.2.txt" "${pkgdir}/usr/share/licenses/paraview/LICENSE"
 
     # Remove IceT man pages to avoid conflicts
-    rm -- "${pkgdir}/usr/share/man/man3/icet"*.3
+    if [ -d ${pkgdir}/usr/share/man/man3 ]; then
+        rm -- "${pkgdir}/usr/share/man/man3/icet"*.3
+    fi
 }
 
