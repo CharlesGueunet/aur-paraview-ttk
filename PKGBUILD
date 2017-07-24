@@ -14,7 +14,7 @@
 # in your /etc/makepkg.conf to allow parallel build
 
 pkgname=('paraview-ttk')
-_paraview_ver=5.3.0
+_paraview_ver=5.4.0
 pkgver=${_paraview_ver}
 pkgrel=1
 pkgdesc='Parallel Visualization Application patched for the Topology ToolKit (TTK)'
@@ -31,23 +31,17 @@ depends=('qt5-tools' 'qt5-x11extras'  'qt5-xmlpatterns'
          )
 makedepends=('cmake' 'mesa' 'gcc-fortran' 'git')
 
-source=("paraview::http://paraview.org/files/v${_paraview_ver:0:3}/ParaView-v${_paraview_ver}.tar.gz"
-        'paraview-desktop.patch'
-        'ttk-patch.tgz')
-sha1sums=('c8a31039b189e63b20618bbfa91e89555ce62b6d'
-          'd7da23daca34cd015294c4d2f702cdc4a81f0853'
-          '075106b2dbe53b37a4ea35098f9bbc563952c990')
+source=("paraview-src::http://paraview.org/files/v${_paraview_ver:0:3}/ParaView-v${_paraview_ver}.tar.gz"
+        "ttk-patch.tgz")
+sha1sums=('d1bc9112d76f603d3232069b4ea9c507c4e1b1a7'
+          '085b3a94ffd19b80f15936d174cc0bf0e2d5f0f8')
 
 prepare() {
     pvpath=${srcdir}/ParaView-v${_paraview_ver}
-    ttkpath=${srcdir}/ttk
+    ttkpath=${srcdir}/ttk-patch
 
     # extract patch
     tar -xvzf ttk-patch.tgz
-
-    # patch paraview desktop
-    cd "$pvpath"
-    patch -p1 -i ../paraview-desktop.patch
 
     # patch paraview with ttk
     cd "$ttkpath/paraview/patch"
@@ -85,7 +79,6 @@ package() {
         -DPARAVIEW_INSTALL_DEVELOPMENT_FILES:BOOL=ON \
         -DPARAVIEW_QT_VERSION=5 \
         -DPARAVIEW_USE_MPI:BOOL=ON \
-        -DPARAVIEW_USE_VISITBRIDGE:BOOL=ON \
         -DVTK_PYTHON_VERSION=3 \
         -DVTK_QT_VERSION=5 \
         -DVTK_RENDERING_BACKEND:STRING=OpenGL2 \
