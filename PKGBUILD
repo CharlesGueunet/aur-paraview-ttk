@@ -14,7 +14,7 @@
 # in your /etc/makepkg.conf to allow parallel build
 
 pkgname=('paraview-ttk')
-_paraview_ver=5.4.0
+_paraview_ver=5.8.0
 pkgver=${_paraview_ver}
 pkgrel=1
 pkgdesc='Parallel Visualization Application patched for the Topology ToolKit (TTK)'
@@ -25,18 +25,24 @@ license=('custom')
 # repository have a special licenses:
 # http://www.paraview.org/paraview-license/
 
-depends=('qt5-tools' 'qt5-x11extras'  'qt5-xmlpatterns'
-         'openmpi' 'python-matplotlib' 'python-numpy' 'ffmpeg' 'boost' 'glew' 'openssl-1.0'
-         'expat' 'freetype2' 'libjpeg' 'libxml2' 'libtheora' 'libpng' 'libtiff' 'zlib'
-         )
+depends=(
+'boost' 'boost-libs' 'cgns' 'double-conversion' 'expat' 'ffmpeg' 'freetype2' 'eigen' 'gdal'
+'glew' 'hdf5' 'intel-tbb' 'jsoncpp' 'libjpeg' 'libjsoncpp.so' 'libpng'
+'libtiff' 'libxml2' 'netcdf' 'ospray' 'protobuf'
+'python-mpi4py' 'python-numpy' 'qt5-svg' 'qt5-tools' 'qt5-x11extras'
+'utf8cpp' 'zlib'
+)
 makedepends=('cmake' 'mesa' 'gcc-fortran' 'git')
+conflict=('paraview', 'paraview-git')
 
 source=("paraview-src::http://paraview.org/files/v${_paraview_ver:0:3}/ParaView-v${_paraview_ver}.tar.gz"
         "ttk-patch.tgz")
-sha1sums=('d1bc9112d76f603d3232069b4ea9c507c4e1b1a7'
-          '085b3a94ffd19b80f15936d174cc0bf0e2d5f0f8')
+md5sums=('8151ed24eeeae5bc8ba038bb544eb409'
+         '4c1e951ef170239ccdeee8a14ddbf92b')
 
 prepare() {
+    mkdir -p build
+
     pvpath=${srcdir}/ParaView-v${_paraview_ver}
     ttkpath=${srcdir}/ttk-patch
 
@@ -44,60 +50,41 @@ prepare() {
     tar -xvzf ttk-patch.tgz
 
     # patch paraview with ttk
-    cd "$ttkpath/paraview/patch"
+    cd "paraview/patch"
     ./patch-paraview-${_paraview_ver}.sh $pvpath
 }
 
 package() {
 
+
+    msg "Build paraview..."
+
     mkdir -p "${srcdir}/build-paraview"
     cd "${srcdir}/build-paraview"
 
-    # flags to enable system libs
-    # add PROTOBUF when https://gitlab.kitware.com/paraview/paraview/issues/13656 gets fixed
-    local VTK_USE_SYSTEM_LIB=""
-    for lib in EXPAT FREETYPE GLEW HDF5 JPEG LIBXML2 OGGTHEORA PNG TIFF ZLIB; do
-        VTK_USE_SYSTEM_LIB+="-DVTK_USE_SYSTEM_${lib}:BOOL=ON "
-    done
+    msg2 "Configure"
 
-    msg "Build paraview..."
-    msg2 "Configuration"
-
-    cmake \
-        -DBUILD_DOCUMENTATION:BOOL=OFF \
-        -DBUILD_EXAMPLES:BOOL=ON \
-        -DBUILD_SHARED_LIBS:BOOL=ON \
-        -DBUILD_TESTING:BOOL=OFF \
+    cmake ../ParaView-v${_paraview_ver} \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_C_COMPILER=mpicc \
-        -DCMAKE_CXX_COMPILER=mpicxx \
-        -DCMAKE_INSTALL_PREFIX:PATH=/usr \
-        -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
-        -DPARAVIEW_ENABLE_FFMPEG:BOOL=ON \
-        -DPARAVIEW_ENABLE_MATPLOTLIB:BOOL=ON \
-        -DPARAVIEW_ENABLE_PYTHON:BOOL=ON \
-        -DPARAVIEW_INSTALL_DEVELOPMENT_FILES:BOOL=ON \
-        -DPARAVIEW_QT_VERSION=5 \
-        -DPARAVIEW_USE_MPI:BOOL=ON \
-        -DVTK_PYTHON_VERSION=3 \
-        -DVTK_QT_VERSION=5 \
-        -DVTK_RENDERING_BACKEND:STRING=OpenGL2 \
-        -DVTK_SMP_IMPLEMENTATION_TYPE:STRING=OpenMP \
-        ${VTK_USE_SYSTEM_LIB} \
-        ../ParaView-v${_paraview_ver}
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DPARAVIEW_ENABLE_FFMPEG=ON \
+        -DPARAVIEW_ENABLE_GDAL=ON \
+        -DPARAVIEW_USE_PYTHON=ON \
+        -DPARAVIEW_USE_RAYTRACING=ON \
+        -DPARAVIEW_BUILD_WITH_EXTERNAL=ON \
+        -DVTK_SMP_IMPLEMENTATION_TYPE=TBB \
+        -DPARAVIEW_USE_VTKM=OFF
 
     msg2 "Compilation"
 
-    make DESTDIR="${pkgdir}" install
+    make ${MAKEFLAGS}
 
-    msg2 "Finishing..."
+    msg2 "Install"
 
+    DESTDIR="${pkgdir}" make install
     # Install license
-    install -Dm644 "${srcdir}/ParaView-v${_paraview_ver}/License_v1.2.txt" "${pkgdir}/usr/share/licenses/paraview/LICENSE"
+    install -Dm644 "${srcdir}"/ParaView-v${_paraview_ver}/License_v1.2.txt "${pkgdir}"/usr/share/licenses/ParaView-v${_paraview_ver}/LICENSE
 
-    # Remove IceT man pages to avoid conflicts
-    if [ -d ${pkgdir}/usr/share/man/man3 ]; then
-        rm -- "${pkgdir}/usr/share/man/man3/icet"*.3
-    fi
+    msg "Build ttk..."
 }
 
